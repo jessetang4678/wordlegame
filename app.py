@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 from game import MAX_GUESSES, WORD_LENGTH, games, start_new_game
 
@@ -101,3 +101,23 @@ def rematch(code, player_id):
 
     new_game = game.start_rematch()
     return redirect(url_for("play", code=new_game.code, player_id=player_id))
+
+
+@app.route("/game/<code>/p/<player_id>/state")
+def state(code, player_id):
+    """JSON that the browser asks for every second (see static/game.js).
+
+    It only includes what this player is allowed to see: never the secret word,
+    and only the colors of the opponent's guesses, not their letters.
+    """
+    game = games.get(code.upper())
+    if game is None or game.player_number(player_id) is None:
+        return jsonify(error="This game no longer exists."), 404
+
+    opponent = game.opponent_of(player_id)
+    return jsonify(
+        full=game.is_full(),
+        over=game.is_over(),
+        rematch_code=game.rematch_code,
+        opponent_colors=[colors for _, colors in game.guesses.get(opponent, [])],
+    )

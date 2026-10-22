@@ -1,14 +1,16 @@
 {% extends "base.html" %}
 
-{% block head %}
-  {# While waiting, reload every 2 seconds to check if the opponent joined.
-     A later commit replaces this with smoother live updates. #}
-  {% if not game.is_full() %}<meta http-equiv="refresh" content="2">{% endif %}
-{% endblock %}
-
 {% block content %}
+{# The data-* attributes tell game.js where to ask for updates and what the page currently shows #}
+<div id="game"
+     data-state-url="{{ url_for('state', code=game.code, player_id=player_id) }}"
+     data-full="{{ game.is_full()|tojson }}"
+     data-over="{{ game.is_over()|tojson }}"
+     data-rematch="{{ game.rematch_code or '' }}">
+
 <p class="game-code">Game code <span class="code">{{ game.code }}</span></p>
 <p class="muted">You are Player {{ number }}</p>
+<p id="connection" class="error" hidden></p>
 
 {% if not game.is_full() %}
   <h1>Waiting for an opponent…</h1>
@@ -40,10 +42,10 @@
       </div>
     </section>
 
-    {# Opponent's board: colors only, so you can't copy their letters #}
+    {# Opponent's board: colors only, so you can't copy their letters. game.js keeps it up to date. #}
     <section>
       <h2>Opponent</h2>
-      <div class="board small">
+      <div class="board small" id="opponent-board">
         {% for i in range(max_guesses) %}
           <div class="row">
             {% if i < opponent_guesses|length %}
@@ -54,7 +56,6 @@
           </div>
         {% endfor %}
       </div>
-      <p class="muted hint">Refresh to see their latest guesses.</p>
     </section>
   </div>
 
@@ -89,4 +90,7 @@
   {% endif %}
 
 {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='game.js') }}"></script>
 {% endblock %}
