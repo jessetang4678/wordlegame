@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Wordle Race</h1>
+<p class="tagline">Two players. One secret word. First to guess it wins.</p>
+
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+<div class="cards">
+  <section class="card">
+    <h2>Start a new game</h2>
+    <p>Create a game and share the code with your opponent.</p>
+    <form action="{{ url_for('create_game') }}" method="post">
+      <button type="submit">Create game</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Join a game</h2>
+    <p>Enter the 4-letter code your opponent gave you.</p>
+    <form action="{{ url_for('join_game') }}" method="post">
+      <input name="code" maxlength="4" placeholder="ABCD" autocomplete="off" required>
+      <button type="submit">Join</button>
+    </form>
+  </section>
+</div>
+{% endblock %}
