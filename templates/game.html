@@ -10,14 +10,65 @@
 <p class="game-code">Game code <span class="code">{{ game.code }}</span></p>
 <p class="muted">You are Player {{ number }}</p>
 
-{% if game.is_full() %}
-  <h1>Both players are here!</h1>
-  <p class="muted">The board arrives in the next step.</p>
-{% else %}
+{% if not game.is_full() %}
   <h1>Waiting for an opponent…</h1>
   <p class="muted">
     Open an incognito window, go to localhost:5001, and join with code
     <strong>{{ game.code }}</strong>.
   </p>
+{% else %}
+
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+  <div class="boards">
+    {# Your board: letters and colors #}
+    <section>
+      <h2>You</h2>
+      <div class="board">
+        {% for i in range(max_guesses) %}
+          <div class="row">
+            {% if i < my_guesses|length %}
+              {% set word, colors = my_guesses[i] %}
+              {% for j in range(word_length) %}
+                <div class="tile {{ colors[j] }}">{{ word[j] }}</div>
+              {% endfor %}
+            {% else %}
+              {% for j in range(word_length) %}<div class="tile empty"></div>{% endfor %}
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# Opponent's board: colors only, so you can't copy their letters #}
+    <section>
+      <h2>Opponent</h2>
+      <div class="board small">
+        {% for i in range(max_guesses) %}
+          <div class="row">
+            {% if i < opponent_guesses|length %}
+              {% for color in opponent_guesses[i][1] %}<div class="tile {{ color }}"></div>{% endfor %}
+            {% else %}
+              {% for j in range(word_length) %}<div class="tile empty"></div>{% endfor %}
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <p class="muted hint">Refresh to see their latest guesses.</p>
+    </section>
+  </div>
+
+  {% if can_guess %}
+    <form class="guess-form" action="{{ url_for('guess', code=game.code, player_id=player_id) }}" method="post">
+      <input name="guess" maxlength="{{ word_length }}" placeholder="GUESS"
+             autocomplete="off" autofocus required>
+      <button type="submit">Guess</button>
+    </form>
+  {% elif solved %}
+    <p class="result">You got it in {{ my_guesses|length }}!</p>
+  {% else %}
+    <p class="result">Out of guesses.</p>
+  {% endif %}
+
 {% endif %}
 {% endblock %}

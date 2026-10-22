@@ -1,6 +1,6 @@
 from flask import Flask, redirect, render_template, request, url_for
 
-from game import games, start_new_game
+from game import MAX_GUESSES, WORD_LENGTH, games, start_new_game
 
 app = Flask(__name__)
 
@@ -35,17 +35,55 @@ def join_game():
     return redirect(url_for("play", code=game.code, player_id=player_id))
 
 
-@app.route("/game/<code>/p/<player_id>")
-def play(code, player_id):
+def find_player(code, player_id):
+    """Look up a game and player. Return (game, None) if valid, or (None, error page) if not."""
     game = games.get(code.upper())
     if game is None:
-        return render_template(
+        return None, (render_template(
             "error.html",
             message="That game doesn't exist. Games are lost when the server restarts, so try creating a new one.",
-        ), 404
+        ), 404)
 
-    number = game.player_number(player_id)
-    if number is None:
-        return render_template("error.html", message="That player link isn't valid for this game."), 404
+    if game.player_number(player_id) is None:
+        return None, (render_template("error.html", message="That player link isn't valid for this game."), 404)
 
-    return render_template("game.html", game=game, number=number)
+    return game, None
+
+
+def show_board(game, player_id, error=None):
+    """Render the game page for one player."""
+    return render_template(
+        "game.html",
+        game=game,
+        player_id=player_id,
+        number=game.player_number(player_id),
+        my_guesses=game.guesses[player_id],
+        opponent_guesses=game.guesses.get(game.opponent_of(player_id), []),
+        can_guess=game.can_guess(player_id),
+        solved=game.has_solved(player_id),
+        max_guesses=MAX_GUESSES,
+        word_length=WORD_LENGTH,
+        error=error,
+    )
+
+
+@app.route("/game/<code>/p/<player_id>")
+def play(code, player_id):
+    game, error_page = find_player(code, player_id)
+    if error_page:
+        return error_page
+    return show_board(game, player_id)
+
+
+@app.route("/game/<code>/p/<player_id>/guess", methods=["POST"])
+def guess(code, player_id):
+    game, error_page = find_player(code, player_id)
+    if error_page:
+        return error_page
+
+    error = game.make_guess(player_id, request.form.get("guess", ""))
+    if error:
+        return show_board(game, player_id, error=error), 400
+
+    # Redirect after a successful guess so refreshing the page doesn't resubmit it.
+    return redirect(url_for("play", code=game.code, player_id=player_id))
