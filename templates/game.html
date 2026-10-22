@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block head %}
+  {# While waiting, reload every 2 seconds to check if the opponent joined.
+     A later commit replaces this with smoother live updates. #}
+  {% if not game.is_full() %}<meta http-equiv="refresh" content="2">{% endif %}
+{% endblock %}
+
+{% block content %}
+<p class="game-code">Game code <span class="code">{{ game.code }}</span></p>
+<p class="muted">You are Player {{ number }}</p>
+
+{% if game.is_full() %}
+  <h1>Both players are here!</h1>
+  <p class="muted">The board arrives in the next step.</p>
+{% else %}
+  <h1>Waiting for an opponent…</h1>
+  <p class="muted">
+    Open an incognito window, go to localhost:5001, and join with code
+    <strong>{{ game.code }}</strong>.
+  </p>
+{% endif %}
+{% endblock %}
