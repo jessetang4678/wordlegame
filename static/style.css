@@ -187,3 +187,11 @@ a { color: var(--green); }
   color: white;
   text-decoration: none;
 }
+
+.warning {
+  background: rgba(181, 159, 59, 0.15);
+  border: 1px solid var(--yellow);
+  color: var(--yellow);
+  padding: 10px;
+  border-radius: 8px;
+}

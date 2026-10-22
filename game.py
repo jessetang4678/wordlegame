@@ -4,14 +4,10 @@ import random
 import secrets
 import string
 
+from words import SECRET_WORDS, is_allowed
+
 WORD_LENGTH = 5
 MAX_GUESSES = 6
-
-# Temporary word list. In a later commit we'll fetch a real list from the web.
-WORDS = [
-    "CRANE", "SLATE", "PLANT", "GHOST", "BRICK", "FLAME", "SHARK", "TOAST",
-    "MONEY", "PIANO", "LEMON", "CHAIR", "RIVER", "STORM", "QUEEN", "WORLD",
-]
 
 # Every game lives here, keyed by its 4-letter code.
 # It's just a Python dictionary in memory, so games disappear when the server restarts.
@@ -112,6 +108,8 @@ class Game:
             return "You don't have any guesses left."
         if len(guess) != WORD_LENGTH or not guess.isalpha():
             return f"A guess must be exactly {WORD_LENGTH} letters."
+        if not is_allowed(guess):
+            return f"{guess} isn't in the word list."
 
         self.guesses[player_id].append((guess, score_guess(guess, self.word)))
         if guess == self.word:
@@ -125,7 +123,7 @@ class Game:
         Returns the new game.
         """
         if self.rematch_code is None:
-            new_game = start_new_game()
+            new_game = start_new_game(avoid=self.word)
             for player_id in self.players:   # same IDs, so both players' links keep working
                 new_game.players.append(player_id)
                 new_game.guesses[player_id] = []
@@ -141,8 +139,10 @@ def new_code():
             return code
 
 
-def start_new_game():
+def start_new_game(avoid=None):
+    """Create a game with a random secret word (not `avoid`, so rematches get a new word)."""
     code = new_code()
-    game = Game(code, random.choice(WORDS))
+    word = random.choice([w for w in SECRET_WORDS if w != avoid])
+    game = Game(code, word)
     games[code] = game
     return game

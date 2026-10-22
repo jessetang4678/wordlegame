@@ -1,8 +1,15 @@
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 from game import MAX_GUESSES, WORD_LENGTH, games, start_new_game
+from words import WORD_LIST_WARNING
 
 app = Flask(__name__)
+
+
+@app.context_processor
+def add_word_list_warning():
+    """Make the warning available to every template (shown on the home page)."""
+    return {"word_list_warning": WORD_LIST_WARNING}
 
 
 @app.route("/")
@@ -121,3 +128,20 @@ def state(code, player_id):
         rematch_code=game.rematch_code,
         opponent_colors=[colors for _, colors in game.guesses.get(opponent, [])],
     )
+
+
+# Friendly pages for anything that goes wrong, so the browser never shows a Python traceback.
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("error.html", message="That page doesn't exist."), 404
+
+
+@app.errorhandler(405)
+def wrong_method(error):
+    return render_template("error.html", message="That link only works from a button in the game."), 405
+
+
+@app.errorhandler(500)
+def server_error(error):
+    return render_template("error.html", message="Something went wrong on the server. Please try again."), 500

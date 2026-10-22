@@ -3,6 +3,7 @@
 <h1>Wordle Race</h1>
 <p class="tagline">Two players. One secret word. First to guess it wins.</p>
 
+{% if word_list_warning %}<p class="warning">{{ word_list_warning }}</p>{% endif %}
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
 
 <div class="cards">
