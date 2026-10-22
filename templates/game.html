@@ -58,16 +58,34 @@
     </section>
   </div>
 
-  {% if can_guess %}
+  {% if outcome %}
+    {# The game is over: show the result, reveal the word, offer a rematch #}
+    <div class="result-box {{ outcome }}">
+      {% if outcome == "won" %}
+        <p class="result">You win! Solved in {{ my_guesses|length }}.</p>
+      {% elif outcome == "lost" %}
+        <p class="result">Your opponent got it first.</p>
+      {% else %}
+        <p class="result">Nobody got it. It's a draw.</p>
+      {% endif %}
+      <p>The word was <span class="code">{{ game.word }}</span></p>
+
+      {% if game.rematch_code %}
+        <a class="button" href="{{ url_for('play', code=game.rematch_code, player_id=player_id) }}">Join the rematch</a>
+      {% else %}
+        <form action="{{ url_for('rematch', code=game.code, player_id=player_id) }}" method="post">
+          <button type="submit">Rematch</button>
+        </form>
+      {% endif %}
+    </div>
+  {% elif can_guess %}
     <form class="guess-form" action="{{ url_for('guess', code=game.code, player_id=player_id) }}" method="post">
       <input name="guess" maxlength="{{ word_length }}" placeholder="GUESS"
              autocomplete="off" autofocus required>
       <button type="submit">Guess</button>
     </form>
-  {% elif solved %}
-    <p class="result">You got it in {{ my_guesses|length }}!</p>
-  {% else %}
-    <p class="result">Out of guesses.</p>
+  {% elif out_of_guesses %}
+    <p class="result">Out of guesses. Waiting to see if your opponent gets it…</p>
   {% endif %}
 
 {% endif %}

@@ -163,3 +163,27 @@ a { color: var(--green); }
 .guess-form input { width: 180px; letter-spacing: 4px; }
 
 .result { font-size: 1.3rem; font-weight: 700; margin-top: 24px; }
+
+/* End of game */
+.result-box {
+  margin: 24px auto 0;
+  max-width: 360px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 2px solid var(--gray);
+}
+
+.result-box.won { border-color: var(--green); }
+.result-box.lost { border-color: var(--error); }
+.result-box .result { margin-top: 0; }
+
+.button {
+  display: inline-block;
+  font-weight: 600;
+  padding: 11px 20px;
+  border-radius: 8px;
+  background: var(--green);
+  color: white;
+  text-decoration: none;
+}

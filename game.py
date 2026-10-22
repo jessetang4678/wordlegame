@@ -50,6 +50,8 @@ class Game:
         self.word = word        # the secret word: never sent to the browser
         self.players = []       # secret player IDs; index 0 is Player 1, index 1 is Player 2
         self.guesses = {}       # player ID -> list of (guess, colors) pairs
+        self.winner = None      # player ID of whoever solved it first
+        self.rematch_code = None  # code of the follow-up game, once someone asks for a rematch
 
     def add_player(self):
         """Add a player and return their secret ID, or None if the game is full."""
@@ -76,15 +78,27 @@ class Game:
                 return other
         return None
 
-    def has_solved(self, player_id):
-        return any(guess == self.word for guess, _ in self.guesses[player_id])
+    def out_of_guesses(self, player_id):
+        return len(self.guesses[player_id]) >= MAX_GUESSES
+
+    def is_over(self):
+        """The game ends when someone wins, or when both players run out of guesses."""
+        if self.winner is not None:
+            return True
+        return self.is_full() and all(self.out_of_guesses(p) for p in self.players)
 
     def can_guess(self, player_id):
-        return (
-            self.is_full()
-            and not self.has_solved(player_id)
-            and len(self.guesses[player_id]) < MAX_GUESSES
-        )
+        return self.is_full() and not self.is_over() and not self.out_of_guesses(player_id)
+
+    def outcome_for(self, player_id):
+        """Return "won", "lost", "draw", or None if the game is still going."""
+        if self.winner == player_id:
+            return "won"
+        if self.winner is not None:
+            return "lost"
+        if self.is_over():
+            return "draw"
+        return None
 
     def make_guess(self, player_id, guess):
         """Try a guess. Return an error message for the player, or None if it worked."""
@@ -92,13 +106,31 @@ class Game:
 
         if not self.is_full():
             return "Wait for your opponent to join before guessing."
-        if not self.can_guess(player_id):
+        if self.is_over():
+            return "This game is already over."
+        if self.out_of_guesses(player_id):
             return "You don't have any guesses left."
         if len(guess) != WORD_LENGTH or not guess.isalpha():
             return f"A guess must be exactly {WORD_LENGTH} letters."
 
         self.guesses[player_id].append((guess, score_guess(guess, self.word)))
+        if guess == self.word:
+            self.winner = player_id   # first correct guess wins the race
         return None
+
+    def start_rematch(self):
+        """Create a new game with the same two players and a new word.
+
+        If the other player already asked for a rematch, reuse that game.
+        Returns the new game.
+        """
+        if self.rematch_code is None:
+            new_game = start_new_game()
+            for player_id in self.players:   # same IDs, so both players' links keep working
+                new_game.players.append(player_id)
+                new_game.guesses[player_id] = []
+            self.rematch_code = new_game.code
+        return games[self.rematch_code]
 
 
 def new_code():

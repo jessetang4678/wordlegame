@@ -60,7 +60,8 @@ def show_board(game, player_id, error=None):
         my_guesses=game.guesses[player_id],
         opponent_guesses=game.guesses.get(game.opponent_of(player_id), []),
         can_guess=game.can_guess(player_id),
-        solved=game.has_solved(player_id),
+        outcome=game.outcome_for(player_id),
+        out_of_guesses=game.out_of_guesses(player_id),
         max_guesses=MAX_GUESSES,
         word_length=WORD_LENGTH,
         error=error,
@@ -87,3 +88,16 @@ def guess(code, player_id):
 
     # Redirect after a successful guess so refreshing the page doesn't resubmit it.
     return redirect(url_for("play", code=game.code, player_id=player_id))
+
+
+@app.route("/game/<code>/p/<player_id>/rematch", methods=["POST"])
+def rematch(code, player_id):
+    game, error_page = find_player(code, player_id)
+    if error_page:
+        return error_page
+
+    if not game.is_over():
+        return show_board(game, player_id, error="You can only start a rematch once the game is over."), 400
+
+    new_game = game.start_rematch()
+    return redirect(url_for("play", code=new_game.code, player_id=player_id))
